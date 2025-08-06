@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kloji Token Exchange</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-coins"></i>
+                <span>Kloji Exchange</span>
+            </div>
+            <nav class="nav">
+                <a href="#home" class="nav-link active">Home</a>
+                <a href="#trade" class="nav-link">Trade</a>
+                <a href="#portfolio" class="nav-link">Portfolio</a>
+                <a href="#about" class="nav-link">About</a>
+            </nav>
+            <div class="wallet-connect">
+                <button class="connect-btn" id="connectWallet">
+                    <i class="fas fa-wallet"></i>
+                    Connect Wallet
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Hero Section -->
+            <section id="home" class="hero">
+                <div class="hero-content">
+                    <h1>Trade Kloji Tokens</h1>
+                    <p>Secure, fast, and reliable cryptocurrency trading platform</p>
+                    <div class="hero-stats">
+                        <div class="stat">
+                            <span class="stat-value">$2.4M</span>
+                            <span class="stat-label">24h Volume</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value">$0.85</span>
+                            <span class="stat-label">KLOJI Price</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value">+12.5%</span>
+                            <span class="stat-label">24h Change</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <div class="token-visual">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Trading Section -->
+            <section id="trade" class="trading-section">
+                <h2>Trade Kloji Tokens</h2>
+                <div class="trading-container">
+                    <div class="trading-card">
+                        <div class="card-header">
+                            <h3>Buy KLOJI</h3>
+                            <div class="price-info">
+                                <span class="current-price">$0.85</span>
+                                <span class="price-change positive">+2.3%</span>
+                            </div>
+                        </div>
+                        <form class="trade-form" id="buyForm">
+                            <div class="form-group">
+                                <label>Amount (USD)</label>
+                                <input type="number" id="buyAmount" placeholder="0.00" min="0" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label>You'll receive (KLOJI)</label>
+                                <input type="number" id="buyReceive" placeholder="0.00" readonly>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-arrow-up"></i>
+                                Buy KLOJI
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="trading-card">
+                        <div class="card-header">
+                            <h3>Sell KLOJI</h3>
+                            <div class="price-info">
+                                <span class="current-price">$0.85</span>
+                                <span class="price-change positive">+2.3%</span>
+                            </div>
+                        </div>
+                        <form class="trade-form" id="sellForm">
+                            <div class="form-group">
+                                <label>Amount (KLOJI)</label>
+                                <input type="number" id="sellAmount" placeholder="0.00" min="0" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label>You'll receive (USD)</label>
+                                <input type="number" id="sellReceive" placeholder="0.00" readonly>
+                            </div>
+                            <button type="submit" class="btn btn-secondary">
+                                <i class="fas fa-arrow-down"></i>
+                                Sell KLOJI
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Portfolio Section -->
+            <section id="portfolio" class="portfolio-section">
+                <h2>Your Portfolio</h2>
+                <div class="portfolio-grid">
+                    <div class="portfolio-card">
+                        <div class="portfolio-header">
+                            <h3>KLOJI Balance</h3>
+                            <i class="fas fa-coins"></i>
+                        </div>
+                        <div class="portfolio-value">
+                            <span class="amount" id="klojiBalance">0.00</span>
+                            <span class="currency">KLOJI</span>
+                        </div>
+                        <div class="portfolio-usd">
+                            <span class="usd-value" id="klojiUsdValue">$0.00</span>
+                        </div>
+                    </div>
+                    <div class="portfolio-card">
+                        <div class="portfolio-header">
+                            <h3>USD Balance</h3>
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="portfolio-value">
+                            <span class="amount" id="usdBalance">0.00</span>
+                            <span class="currency">USD</span>
+                        </div>
+                    </div>
+                    <div class="portfolio-card">
+                        <div class="portfolio-header">
+                            <h3>Total Value</h3>
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="portfolio-value">
+                            <span class="amount" id="totalValue">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- About Section -->
+            <section id="about" class="about-section">
+                <h2>About Kloji Token</h2>
+                <div class="about-content">
+                    <div class="about-text">
+                        <p>Kloji (KLOJI) is a revolutionary cryptocurrency designed for the future of decentralized finance. Built on cutting-edge blockchain technology, Kloji offers fast transactions, low fees, and enhanced security.</p>
+                        <div class="features">
+                            <div class="feature">
+                                <i class="fas fa-bolt"></i>
+                                <span>Fast Transactions</span>
+                            </div>
+                            <div class="feature">
+                                <i class="fas fa-shield-alt"></i>
+                                <span>Secure</span>
+                            </div>
+                            <div class="feature">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Scalable</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Kloji Exchange</h4>
+                    <p>Secure cryptocurrency trading platform</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <a href="#home">Home</a>
+                    <a href="#trade">Trade</a>
+                    <a href="#portfolio">Portfolio</a>
+                </div>
+                <div class="footer-section">
+                    <h4>Connect</h4>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-telegram"></i></a>
+                        <a href="#"><i class="fab fa-discord"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Kloji Exchange. All rights reserved.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="toast" id="toast">
+        <div class="toast-content">
+            <i class="toast-icon"></i>
+            <span class="toast-message"></span>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
