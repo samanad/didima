@@ -278,6 +278,13 @@ body {
     color: #666;
 }
 
+.fee-input {
+    background: #e8f5e8 !important;
+    color: #10b981 !important;
+    font-weight: 600;
+    border-color: #10b981 !important;
+}
+
 /* Button Styles */
 .btn {
     padding: 1rem 2rem;
@@ -385,6 +392,118 @@ body {
 .portfolio-usd {
     font-size: 0.9rem;
     color: #666;
+}
+
+/* Liquidity Pool Section */
+.liquidity-section {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 3rem;
+    margin: 3rem 0;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.liquidity-section h2 {
+    text-align: center;
+    font-size: 2.5rem;
+    margin-bottom: 3rem;
+    color: #333;
+}
+
+.liquidity-content {
+    display: flex;
+    justify-content: center;
+}
+
+.liquidity-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+    width: 100%;
+}
+
+.liquidity-card {
+    background: white;
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+    transition: transform 0.3s ease;
+}
+
+.liquidity-card:hover {
+    transform: translateY(-5px);
+}
+
+.liquidity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.liquidity-header h3 {
+    font-size: 1.5rem;
+    color: #333;
+}
+
+.liquidity-header i {
+    font-size: 2rem;
+    color: #667eea;
+}
+
+.liquidity-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.liquidity-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.liquidity-stat .stat-label {
+    font-weight: 600;
+    color: #666;
+}
+
+.liquidity-stat .stat-value {
+    font-weight: 700;
+    color: #333;
+    font-size: 1.1rem;
+}
+
+.network-info p {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #666;
+    margin-bottom: 1.5rem;
+}
+
+.network-features {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.network-feature {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.network-feature i {
+    color: #667eea;
+    font-size: 1.2rem;
 }
 
 /* About Section */
