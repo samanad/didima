@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 
 // Make core middleware optional to prevent startup crashes
 let helmet, morgan, compression, rateLimit, session;
@@ -46,10 +47,18 @@ try {
   createClient = null;
 }
 const http = require('http');
-const socketIo = require('socket.io');
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
+
+// Make socket.io optional
+let socketIo;
+try {
+  socketIo = require('socket.io');
+} catch (e) {
+  console.warn('socket.io not available:', e.message);
+  socketIo = null;
+}
 
 // Import routes (with error handling - make them optional)
 let authRoutes, userRoutes, tradingRoutes, portfolioRoutes, liquidityRoutes, blockchainRoutes;
@@ -150,12 +159,22 @@ const DATA_FILE = path.join(__dirname, 'prices.json');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, {
-  cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    methods: ["GET", "POST"]
+
+// Initialize Socket.IO only if available
+let io = null;
+if (socketIo) {
+  try {
+    io = socketIo(server, {
+      cors: {
+        origin: process.env.FRONTEND_URL || "http://localhost:3000",
+        methods: ["GET", "POST"]
+      }
+    });
+  } catch (e) {
+    console.warn('Could not initialize Socket.IO:', e.message);
+    io = null;
   }
-});
+}
 
 // Initialize prices file if it doesn't exist (with error handling)
 try {
