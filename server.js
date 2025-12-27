@@ -399,13 +399,54 @@ app.post('/api/prices', verifyAdminIP, (req, res) => {
   }
 });
 
-// API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', authMiddleware, userRoutes);
-app.use('/api/trading', authMiddleware, tradingRoutes);
-app.use('/api/portfolio', authMiddleware, portfolioRoutes);
-app.use('/api/liquidity', liquidityRoutes);
-app.use('/api/blockchain', blockchainRoutes);
+// API Routes (only use if they loaded successfully)
+if (authRoutes) {
+  try {
+    app.use('/api/auth', authRoutes);
+  } catch (e) {
+    console.error('Error mounting auth routes:', e.message);
+  }
+}
+
+if (userRoutes && authMiddleware) {
+  try {
+    app.use('/api/users', authMiddleware, userRoutes);
+  } catch (e) {
+    console.error('Error mounting user routes:', e.message);
+  }
+}
+
+if (tradingRoutes && authMiddleware) {
+  try {
+    app.use('/api/trading', authMiddleware, tradingRoutes);
+  } catch (e) {
+    console.error('Error mounting trading routes:', e.message);
+  }
+}
+
+if (portfolioRoutes && authMiddleware) {
+  try {
+    app.use('/api/portfolio', authMiddleware, portfolioRoutes);
+  } catch (e) {
+    console.error('Error mounting portfolio routes:', e.message);
+  }
+}
+
+if (liquidityRoutes) {
+  try {
+    app.use('/api/liquidity', liquidityRoutes);
+  } catch (e) {
+    console.error('Error mounting liquidity routes:', e.message);
+  }
+}
+
+if (blockchainRoutes) {
+  try {
+    app.use('/api/blockchain', blockchainRoutes);
+  } catch (e) {
+    console.error('Error mounting blockchain routes:', e.message);
+  }
+}
 
 // WebSocket endpoint for real-time updates
 app.get('/api/ws', (req, res) => {
