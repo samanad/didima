@@ -624,13 +624,32 @@
                         body: JSON.stringify({ price })
                     });
 
-                    let result;
-                    try {
+                    let result = {};
+                    const contentType = response.headers.get('content-type');
+                    
+                    if (contentType && contentType.includes('application/json')) {
+                        try {
+                            const text = await response.text();
+                            if (text && text.trim() !== '') {
+                                result = JSON.parse(text);
+                            }
+                        } catch (parseError) {
+                            console.error('Error parsing JSON response:', parseError);
+                            // If it's a 403, it's likely an IP restriction
+                            if (response.status === 403) {
+                                result = { error: 'Access denied. Admin IP (165.22.58.120) required.' };
+                            } else {
+                                result = { error: 'Invalid response from server. Status: ' + response.status };
+                            }
+                        }
+                    } else {
+                        // Non-JSON response
                         const text = await response.text();
-                        result = text ? JSON.parse(text) : {};
-                    } catch (parseError) {
-                        console.error('Error parsing response:', parseError);
-                        result = { error: 'Invalid response from server' };
+                        if (response.status === 403) {
+                            result = { error: 'Access denied. Admin IP (165.22.58.120) required.' };
+                        } else {
+                            result = { error: text || 'Server error. Status: ' + response.status };
+                        }
                     }
 
                     if (response.ok) {
@@ -644,13 +663,14 @@
                         await loadPriceChart();
                     } else {
                         if (messageDiv) {
-                            messageDiv.textContent = result.error || 'Failed to add price';
+                            messageDiv.textContent = result.error || 'Failed to add price. Status: ' + response.status;
                             messageDiv.className = 'price-message error';
                         }
                     }
                 } catch (error) {
+                    console.error('Network error:', error);
                     if (messageDiv) {
-                        messageDiv.textContent = 'Error: ' + error.message;
+                        messageDiv.textContent = 'Network error: ' + error.message;
                         messageDiv.className = 'price-message error';
                     }
                 } finally {

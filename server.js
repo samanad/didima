@@ -142,10 +142,16 @@ function verifyAdminIP(req, res, next) {
   const clientIP = req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress;
   const cleanIP = clientIP.replace('::ffff:', ''); // Remove IPv6 prefix if present
   
+  // Log IP for debugging
+  console.log('Price tracker request from IP:', cleanIP, 'Expected:', ADMIN_IP);
+  
   if (cleanIP === ADMIN_IP) {
     next();
   } else {
-    res.status(403).json({ error: 'Access denied. Admin IP required.' });
+    res.status(403).json({ 
+      error: 'Access denied. Admin IP (165.22.58.120) required.',
+      receivedIP: cleanIP
+    });
   }
 }
 
@@ -192,8 +198,23 @@ app.post('/api/prices', verifyAdminIP, (req, res) => {
     const priceValue = parseFloat(price);
     const timestamp = new Date().toISOString();
 
-    const data = fs.readFileSync(DATA_FILE, 'utf8');
-    const prices = JSON.parse(data);
+    // Read existing prices or initialize empty array
+    let prices = [];
+    if (fs.existsSync(DATA_FILE)) {
+      try {
+        const data = fs.readFileSync(DATA_FILE, 'utf8');
+        if (data && data.trim() !== '') {
+          prices = JSON.parse(data);
+        }
+      } catch (readError) {
+        console.error('Error reading prices file:', readError);
+        prices = [];
+      }
+    }
+
+    if (!Array.isArray(prices)) {
+      prices = [];
+    }
 
     prices.push({
       price: priceValue,
@@ -204,7 +225,7 @@ app.post('/api/prices', verifyAdminIP, (req, res) => {
     res.json({ success: true, price: priceValue, timestamp });
   } catch (error) {
     console.error('Error saving price:', error);
-    res.status(500).json({ error: 'Failed to save price' });
+    res.status(500).json({ error: 'Failed to save price: ' + error.message });
   }
 });
 
