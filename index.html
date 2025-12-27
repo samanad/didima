@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kloji Token Exchange</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        /* Price Tracker Styles */
+        .price-tracker-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .price-tracker-section h2 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .price-tracker-section .subtitle {
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 1em;
+        }
+
+        .admin-panel {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 2px solid #e9ecef;
+        }
+
+        .admin-panel h3 {
+            color: #495057;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+
+        .price-form-group {
+            margin-bottom: 20px;
+        }
+
+        .price-form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #495057;
+            font-weight: 600;
+        }
+
+        .price-form-group input[type="number"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .price-form-group input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .price-submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .price-submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .price-submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .price-message {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .price-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .price-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .price-chart-container {
+            position: relative;
+            height: 400px;
+            margin-top: 30px;
+        }
+
+        .price-status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.9em;
+        }
+
+        .price-status.admin {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .price-status.unauthorized {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-coins"></i>
+                <span>Kloji Exchange</span>
+            </div>
+            <nav class="nav">
+                <a href="#home" class="nav-link active">Home</a>
+                <a href="#trade" class="nav-link">Trade</a>
+                <a href="#portfolio" class="nav-link">Portfolio</a>
+                <a href="#liquidity" class="nav-link">Liquidity</a>
+                <a href="#about" class="nav-link">About</a>
+            </nav>
+            <div class="wallet-connect">
+                <button class="connect-btn" id="connectWallet">
+                    <i class="fas fa-wallet"></i>
+                    Connect Wallet
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Price Tracker Section (at top) -->
+            <section id="home" class="price-tracker-section">
+                <h2>$kloji Price Tracker</h2>
+                <p class="subtitle">Track and visualize $kloji price over time</p>
+
+                <div class="admin-panel">
+                    <h3>Admin Panel</h3>
+                    <div id="priceStatus" class="price-status"></div>
+                    <form id="priceForm">
+                        <div class="price-form-group">
+                            <label for="priceInput">Current Price (USD)</label>
+                            <input 
+                                type="number" 
+                                id="priceInput" 
+                                name="price" 
+                                step="0.000001" 
+                                min="0" 
+                                placeholder="Enter price in dollars"
+                                required
+                            >
+                        </div>
+                        <button type="submit" id="priceSubmitBtn" class="price-submit-btn">Add Price</button>
+                    </form>
+                    <div id="priceMessage" class="price-message"></div>
+                </div>
+
+                <div class="price-chart-container">
+                    <canvas id="priceChart"></canvas>
+                </div>
+            </section>
+
+            <!-- Hero Section -->
+            <section class="hero">
+                <div class="hero-content">
+                    <h1>Trade Kloji Tokens</h1>
+                    <p>Secure, fast, and reliable cryptocurrency trading platform</p>
+                    <div class="hero-stats">
+                        <div class="stat">
+                            <span class="stat-value">$2.4M</span>
+                            <span class="stat-label">24h Volume</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value">$0.85</span>
+                            <span class="stat-label">KLOJI Price</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value">+12.5%</span>
+                            <span class="stat-label">24h Change</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value">USDT</span>
+                            <span class="stat-label">Payment Method</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <div class="token-visual">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Trading Section -->
+            <section id="trade" class="trading-section">
+                <h2>Trade Kloji Tokens</h2>
+                <div class="trading-container">
+                    <div class="trading-card">
+                        <div class="card-header">
+                            <h3>Buy KLOJI</h3>
+                            <div class="price-info">
+                                <span class="current-price">$0.85</span>
+                                <span class="price-change positive">+2.3%</span>
+                            </div>
+                        </div>
+                        <form class="trade-form" id="buyForm">
+                            <div class="form-group">
+                                <label>Amount (USDT)</label>
+                                <input type="number" id="buyAmount" placeholder="0.00" min="0" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label>You'll receive (KLOJI)</label>
+                                <input type="number" id="buyReceive" placeholder="0.00" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>Network Fee</label>
+                                <input type="text" value="0.5 USDT" readonly class="fee-input">
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-arrow-up"></i>
+                                Buy KLOJI with USDT
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="trading-card">
+                        <div class="card-header">
+                            <h3>Sell KLOJI</h3>
+                            <div class="price-info">
+                                <span class="current-price">$0.85</span>
+                                <span class="price-change positive">+2.3%</span>
+                            </div>
+                        </div>
+                        <form class="trade-form" id="sellForm">
+                            <div class="form-group">
+                                <label>Amount (KLOJI)</label>
+                                <input type="number" id="sellAmount" placeholder="0.00" min="0" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label>You'll receive (USDT)</label>
+                                <input type="number" id="sellReceive" placeholder="0.00" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>Network Fee</label>
+                                <input type="text" value="0.5 USDT" readonly class="fee-input">
+                            </div>
+                            <button type="submit" class="btn btn-secondary">
+                                <i class="fas fa-arrow-down"></i>
+                                Sell KLOJI for USDT
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Portfolio Section -->
+            <section id="portfolio" class="portfolio-section">
+                <h2>Your Portfolio</h2>
+                <div class="portfolio-grid">
+                    <div class="portfolio-card">
+                        <div class="portfolio-header">
+                            <h3>KLOJI Balance</h3>
+                            <i class="fas fa-coins"></i>
+                        </div>
+                        <div class="portfolio-value">
+                            <span class="amount" id="klojiBalance">0.00</span>
+                            <span class="currency">KLOJI</span>
+                        </div>
+                        <div class="portfolio-usd">
+                            <span class="usd-value" id="klojiUsdValue">$0.00</span>
+                        </div>
+                    </div>
+                    <div class="portfolio-card">
+                        <div class="portfolio-header">
+                            <h3>USDT Balance</h3>
+                            <i class="fab fa-ethereum"></i>
+                        </div>
+                        <div class="portfolio-value">
+                            <span class="amount" id="usdtBalance">0.00</span>
+                            <span class="currency">USDT</span>
+                        </div>
+                    </div>
+                    <div class="portfolio-card">
+                        <div class="portfolio-header">
+                            <h3>Total Value</h3>
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="portfolio-value">
+                            <span class="amount" id="totalValue">$0.00</span>
+                        </div>
+                        <div class="portfolio-usd">
+                            <span class="usd-value" id="totalUsdtValue">0.00 USDT</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Liquidity Pool Section -->
+            <section id="liquidity" class="liquidity-section">
+                <h2>Central Liquidity Pool</h2>
+                <div class="liquidity-content">
+                    <div class="liquidity-info">
+                        <div class="liquidity-card">
+                            <div class="liquidity-header">
+                                <h3>Pool Reserves</h3>
+                                <i class="fas fa-database"></i>
+                            </div>
+                            <div class="liquidity-stats">
+                                <div class="liquidity-stat">
+                                    <span class="stat-label">KLOJI Available</span>
+                                    <span class="stat-value" id="poolKloji">1,000,000</span>
+                                </div>
+                                <div class="liquidity-stat">
+                                    <span class="stat-label">USDT Available</span>
+                                    <span class="stat-value" id="poolUsdt">850,000</span>
+                                </div>
+                                <div class="liquidity-stat">
+                                    <span class="stat-label">Network</span>
+                                    <span class="stat-value">BEP20</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="liquidity-card">
+                            <div class="liquidity-header">
+                                <h3>Network Integration</h3>
+                                <i class="fas fa-network-wired"></i>
+                            </div>
+                            <div class="network-info">
+                                <p>This central liquidity pool is connected to multiple platforms in the Kloji ecosystem, ensuring seamless token flow across the network.</p>
+                                <div class="network-features">
+                                    <div class="network-feature">
+                                        <i class="fas fa-sync-alt"></i>
+                                        <span>Cross-Platform Liquidity</span>
+                                    </div>
+                                    <div class="network-feature">
+                                        <i class="fas fa-shield-alt"></i>
+                                        <span>Secure Transactions</span>
+                                    </div>
+                                    <div class="network-feature">
+                                        <i class="fas fa-globe"></i>
+                                        <span>Global Access</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- About Section -->
+            <section id="about" class="about-section">
+                <h2>About Kloji Token</h2>
+                <div class="about-content">
+                    <div class="about-text">
+                        <p>Kloji (KLOJI) is a revolutionary cryptocurrency designed for the future of decentralized finance. Built on cutting-edge blockchain technology, Kloji offers fast transactions, low fees, and enhanced security. Trade KLOJI using USDT BEP20 for seamless cross-platform liquidity.</p>
+                        <div class="features">
+                            <div class="feature">
+                                <i class="fas fa-bolt"></i>
+                                <span>Fast Transactions</span>
+                            </div>
+                            <div class="feature">
+                                <i class="fas fa-shield-alt"></i>
+                                <span>Secure</span>
+                            </div>
+                            <div class="feature">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Scalable</span>
+                            </div>
+                            <div class="feature">
+                                <i class="fab fa-ethereum"></i>
+                                <span>USDT BEP20 Support</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Kloji Exchange</h4>
+                    <p>Secure cryptocurrency trading platform</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <a href="#home">Home</a>
+                    <a href="#trade">Trade</a>
+                    <a href="#portfolio">Portfolio</a>
+                </div>
+                <div class="footer-section">
+                    <h4>Connect</h4>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-telegram"></i></a>
+                        <a href="#"><i class="fab fa-discord"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Kloji Exchange. All rights reserved.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="toast" id="toast">
+        <div class="toast-content">
+            <i class="toast-icon"></i>
+            <span class="toast-message"></span>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Price Tracker JavaScript
+        let priceChart = null;
+
+        // Check admin status on load
+        async function checkAdminStatus() {
+            try {
+                const response = await fetch('/api/prices');
+                const statusDiv = document.getElementById('priceStatus');
+                
+                if (response.ok) {
+                    statusDiv.textContent = '✓ Admin access verified';
+                    statusDiv.className = 'price-status admin';
+                } else if (response.status === 403) {
+                    statusDiv.textContent = '✗ Access denied. Admin IP required.';
+                    statusDiv.className = 'price-status unauthorized';
+                    document.getElementById('priceForm').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error checking admin status:', error);
+            }
+        }
+
+        // Load and display chart
+        async function loadPriceChart() {
+            try {
+                const response = await fetch('/api/prices');
+                const prices = await response.json();
+
+                const ctx = document.getElementById('priceChart');
+                if (!ctx) return;
+                
+                const chartCtx = ctx.getContext('2d');
+                
+                // Sort prices by timestamp
+                prices.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+                const labels = prices.map(p => {
+                    const date = new Date(p.timestamp);
+                    return date.toLocaleString();
+                });
+                const data = prices.map(p => p.price);
+
+                if (priceChart) {
+                    priceChart.destroy();
+                }
+
+                priceChart = new Chart(chartCtx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '$kloji Price (USD)',
+                            data: data,
+                            borderColor: 'rgb(102, 126, 234)',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            pointBackgroundColor: 'rgb(102, 126, 234)',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                title: {
+                                    display: true,
+                                    text: 'Price (USD)'
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        return '$' + value.toFixed(6);
+                                    }
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Time'
+                                },
+                                ticks: {
+                                    maxRotation: 45,
+                                    minRotation: 45
+                                }
+                            }
+                        },
+                        interaction: {
+                            mode: 'nearest',
+                            axis: 'x',
+                            intersect: false
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading chart:', error);
+            }
+        }
+
+        // Handle form submission
+        const priceForm = document.getElementById('priceForm');
+        if (priceForm) {
+            priceForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const priceInput = document.getElementById('priceInput');
+                const submitBtn = document.getElementById('priceSubmitBtn');
+                const messageDiv = document.getElementById('priceMessage');
+                const price = parseFloat(priceInput.value);
+
+                if (isNaN(price) || price <= 0) {
+                    messageDiv.textContent = 'Please enter a valid price';
+                    messageDiv.className = 'price-message error';
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Adding...';
+
+                try {
+                    const response = await fetch('/api/prices', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ price })
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        messageDiv.textContent = `Price $${price.toFixed(6)} added successfully!`;
+                        messageDiv.className = 'price-message success';
+                        priceInput.value = '';
+                        
+                        // Reload chart
+                        await loadPriceChart();
+                    } else {
+                        messageDiv.textContent = result.error || 'Failed to add price';
+                        messageDiv.className = 'price-message error';
+                    }
+                } catch (error) {
+                    messageDiv.textContent = 'Error: ' + error.message;
+                    messageDiv.className = 'price-message error';
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Add Price';
+                }
+            });
+        }
+
+        // Initialize price tracker when page loads
+        if (document.getElementById('priceChart')) {
+            checkAdminStatus();
+            loadPriceChart();
+
+            // Refresh chart every 30 seconds
+            setInterval(loadPriceChart, 30000);
+        }
+    </script>
+</body>
+</html> 
