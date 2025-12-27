@@ -44,16 +44,38 @@ const io = socketIo(server, {
   }
 });
 
-// Connect to databases
-connectDB();
-connectRedis();
+// Initialize prices file if it doesn't exist (with error handling)
+try {
+  if (!fs.existsSync(DATA_FILE)) {
+    try {
+      fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2));
+      console.log('Created prices.json at:', DATA_FILE);
+    } catch (writeError) {
+      console.error('Warning: Could not create prices.json:', writeError.message);
+      console.error('File path:', DATA_FILE);
+    }
+  }
+} catch (error) {
+  console.error('Error initializing prices.json:', error);
+}
 
-// Initialize blockchain
-initializeBlockchain();
+// Connect to databases (with error handling for optional services)
+try {
+  connectDB();
+} catch (error) {
+  console.error('Database connection error (non-critical):', error.message);
+}
 
-// Initialize prices file if it doesn't exist
-if (!fs.existsSync(DATA_FILE)) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2));
+try {
+  connectRedis();
+} catch (error) {
+  console.error('Redis connection error (non-critical):', error.message);
+}
+
+try {
+  initializeBlockchain();
+} catch (error) {
+  console.error('Blockchain initialization error (non-critical):', error.message);
 }
 
 // Rate limiting
