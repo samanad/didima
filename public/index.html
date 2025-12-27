@@ -478,8 +478,16 @@
         async function loadPriceChart() {
             try {
                 const response = await fetch('/api/prices');
+                
                 if (!response.ok) {
-                    console.error('Failed to fetch prices:', response.status);
+                    console.error('Failed to fetch prices:', response.status, response.statusText);
+                    // Try to get error message
+                    try {
+                        const errorText = await response.text();
+                        console.error('Error response:', errorText);
+                    } catch (e) {
+                        console.error('Could not read error response');
+                    }
                     return;
                 }
                 
@@ -492,14 +500,29 @@
                         const text = await response.text();
                         if (text && text.trim() !== '') {
                             prices = JSON.parse(text);
+                        } else {
+                            prices = [];
                         }
                     } catch (parseError) {
                         console.error('JSON parse error:', parseError);
+                        console.error('Response text that failed to parse:', await response.clone().text());
+                        prices = [];
+                    }
+                } else {
+                    // Not JSON, try to parse anyway
+                    try {
+                        const text = await response.text();
+                        if (text && text.trim() !== '') {
+                            prices = JSON.parse(text);
+                        }
+                    } catch (parseError) {
+                        console.error('Error parsing non-JSON response:', parseError);
                         prices = [];
                     }
                 }
                 
                 if (!Array.isArray(prices)) {
+                    console.warn('Prices is not an array:', prices);
                     prices = [];
                 }
 
