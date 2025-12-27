@@ -527,14 +527,29 @@
                 }
 
                 const ctx = document.getElementById('priceChart');
-                if (!ctx) return;
+                if (!ctx) {
+                    console.warn('Price chart canvas not found');
+                    return;
+                }
                 
                 const chartCtx = ctx.getContext('2d');
                 
-                // Sort prices by timestamp
-                if (prices.length > 0) {
-                    prices.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                // Show message if no data (check BEFORE processing)
+                if (prices.length === 0) {
+                    if (priceChart) {
+                        priceChart.destroy();
+                        priceChart = null;
+                    }
+                    chartCtx.clearRect(0, 0, ctx.width, ctx.height);
+                    chartCtx.font = '16px Inter';
+                    chartCtx.fillStyle = '#666';
+                    chartCtx.textAlign = 'center';
+                    chartCtx.fillText('No price data yet. Add a price to see the chart.', ctx.width / 2, ctx.height / 2);
+                    return;
                 }
+                
+                // Sort prices by timestamp
+                prices.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
                 const labels = prices.map(p => {
                     const date = new Date(p.timestamp);
@@ -544,16 +559,6 @@
 
                 if (priceChart) {
                     priceChart.destroy();
-                }
-
-                // Show message if no data
-                if (prices.length === 0) {
-                    chartCtx.clearRect(0, 0, ctx.width, ctx.height);
-                    chartCtx.font = '16px Inter';
-                    chartCtx.fillStyle = '#666';
-                    chartCtx.textAlign = 'center';
-                    chartCtx.fillText('No price data yet. Add a price to see the chart.', ctx.width / 2, ctx.height / 2);
-                    return;
                 }
 
                 priceChart = new Chart(chartCtx, {
