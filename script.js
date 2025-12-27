@@ -1,13 +1,13 @@
 // Global variables
 let klojiPrice = 0.85;
-let userKlojiBalance = 0;
-let userUsdtBalance = 1000; // Starting USDT balance
+let userKlojiBalance = 10000000; // 10 million KLOJI
+let userUsdtBalance = 400; // 400 USDT
 let isWalletConnected = false;
 
-// Central liquidity pool (shared across network)
+// Central liquidity pool (shared across network) - static, waiting for new numbers
 let centralPool = {
-    kloji: 1000000, // 1 million KLOJI
-    usdt: 850000,   // 850k USDT
+    kloji: 1000000, // 1 million KLOJI - static, waiting for update
+    usdt: 850000,   // 850k USDT - static, waiting for update
     networkFee: 0.5 // 0.5 USDT per transaction
 };
 
@@ -33,19 +33,26 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
     setupEventListeners();
     updatePortfolio();
-    simulatePriceUpdates();
+    // Removed simulatePriceUpdates() - no fake changing values
 });
 
 // Initialize the application
 function initializeApp() {
-    // Load saved data from localStorage
+    // Set default balances
+    userKlojiBalance = 10000000; // 10 million KLOJI
+    userUsdtBalance = 400; // 400 USDT
+    
+    // Load saved data from localStorage (if exists, but use defaults above)
     const savedData = localStorage.getItem('klojiExchangeData');
     if (savedData) {
-        const data = JSON.parse(savedData);
-        userKlojiBalance = data.klojiBalance || 0;
-        userUsdtBalance = data.usdtBalance || 1000;
-        klojiPrice = data.klojiPrice || 0.85;
-        centralPool = data.centralPool || centralPool;
+        try {
+            const data = JSON.parse(savedData);
+            // Only load price, not balances (balances are set to fixed values)
+            klojiPrice = data.klojiPrice || 0.85;
+            // Pool reserves stay static - waiting for new numbers
+        } catch (e) {
+            console.error('Error parsing saved data:', e);
+        }
     }
     
     updatePortfolio();
@@ -210,15 +217,17 @@ function updateSellReceive() {
 
 // Update portfolio display
 function updatePortfolio() {
-    klojiBalanceEl.textContent = userKlojiBalance.toFixed(4);
-    usdtBalanceEl.textContent = userUsdtBalance.toFixed(2);
+    klojiBalanceEl.textContent = userKlojiBalance.toLocaleString('en-US', {maximumFractionDigits: 2});
+    usdtBalanceEl.textContent = userUsdtBalance.toLocaleString('en-US', {maximumFractionDigits: 2});
     
-    const klojiUsdtValue = userKlojiBalance * klojiPrice;
-    klojiUsdValueEl.textContent = `$${klojiUsdtValue.toFixed(2)}`;
+    // Total value is set to 12000000000 USD
+    const totalValue = 12000000000;
+    totalValueEl.textContent = `$${totalValue.toLocaleString('en-US', {maximumFractionDigits: 2})}`;
+    totalUsdtValueEl.textContent = `${totalValue.toLocaleString('en-US', {maximumFractionDigits: 2})} USD`;
     
-    const totalValue = userUsdtBalance + klojiUsdtValue;
-    totalValueEl.textContent = `$${totalValue.toFixed(2)}`;
-    totalUsdtValueEl.textContent = `${totalValue.toFixed(2)} USDT`;
+    // Calculate KLOJI USD value based on total
+    const klojiUsdtValue = totalValue - userUsdtBalance;
+    klojiUsdValueEl.textContent = `$${klojiUsdtValue.toLocaleString('en-US', {maximumFractionDigits: 2})}`;
     
     // Update price displays
     document.querySelectorAll('.current-price').forEach(el => {
@@ -226,10 +235,15 @@ function updatePortfolio() {
     });
 }
 
-// Update liquidity pool display
+// Update liquidity pool display - static, waiting for new numbers
 function updateLiquidityPool() {
-    poolKlojiEl.textContent = centralPool.kloji.toLocaleString();
-    poolUsdtEl.textContent = centralPool.usdt.toLocaleString();
+    // Pool reserves are static - waiting for new numbers from backend
+    if (poolKlojiEl) {
+        poolKlojiEl.textContent = centralPool.kloji.toLocaleString();
+    }
+    if (poolUsdtEl) {
+        poolUsdtEl.textContent = centralPool.usdt.toLocaleString();
+    }
 }
 
 // Handle navigation
@@ -240,13 +254,12 @@ function handleNavigation(e) {
     e.target.classList.add('active');
 }
 
-// Save data to localStorage
+// Save data to localStorage (only save price, balances are fixed)
 function saveData() {
     const data = {
-        klojiBalance: userKlojiBalance,
-        usdtBalance: userUsdtBalance,
         klojiPrice: klojiPrice,
-        centralPool: centralPool
+        // Balances are fixed: klojiBalance = 10000000, usdtBalance = 400
+        // Pool reserves are static - waiting for new numbers
     };
     localStorage.setItem('klojiExchangeData', JSON.stringify(data));
 }
@@ -273,65 +286,8 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
-// Simulate price updates and network effects
-function simulatePriceUpdates() {
-    setInterval(() => {
-        // Random price change between -5% and +5%
-        const changePercent = (Math.random() - 0.5) * 0.1;
-        klojiPrice *= (1 + changePercent);
-        
-        // Keep price within reasonable bounds
-        klojiPrice = Math.max(0.1, Math.min(2.0, klojiPrice));
-        
-        // Simulate network effects - other platforms using the same liquidity pool
-        simulateNetworkActivity();
-        
-        updatePortfolio();
-        updateLiquidityPool();
-        updatePriceChangeDisplay();
-    }, 10000); // Update every 10 seconds
-}
-
-// Simulate activity from other platforms in the network
-function simulateNetworkActivity() {
-    // Random small transactions from other platforms
-    const randomActivity = Math.random();
-    
-    if (randomActivity > 0.7) {
-        // Buy activity from other platforms
-        const buyAmount = Math.random() * 100; // Random USDT amount
-        if (buyAmount <= centralPool.usdt && buyAmount / klojiPrice <= centralPool.kloji) {
-            centralPool.usdt += buyAmount;
-            centralPool.kloji -= buyAmount / klojiPrice;
-        }
-    } else if (randomActivity < 0.3) {
-        // Sell activity from other platforms
-        const sellAmount = Math.random() * 50; // Random KLOJI amount
-        const usdtNeeded = sellAmount * klojiPrice + centralPool.networkFee;
-        if (sellAmount <= centralPool.kloji && usdtNeeded <= centralPool.usdt) {
-            centralPool.kloji += sellAmount;
-            centralPool.usdt -= usdtNeeded;
-        }
-    }
-}
-
-// Update price change display
-function updatePriceChangeDisplay() {
-    const priceChanges = document.querySelectorAll('.price-change');
-    priceChanges.forEach(el => {
-        // Simulate random price change for display
-        const change = (Math.random() - 0.5) * 0.1;
-        const changePercent = (change * 100).toFixed(1);
-        
-        if (change >= 0) {
-            el.textContent = `+${changePercent}%`;
-            el.className = 'price-change positive';
-        } else {
-            el.textContent = `${changePercent}%`;
-            el.className = 'price-change negative';
-        }
-    });
-}
+// Removed simulatePriceUpdates() - no fake changing values
+// Pool reserves are static and will be updated when new numbers are provided
 
 // Add some interactive animations
 function addAnimations() {

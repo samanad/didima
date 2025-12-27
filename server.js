@@ -144,12 +144,20 @@ app.get('/health', (req, res) => {
 // Get all prices
 app.get('/api/prices', (req, res) => {
   try {
+    if (!fs.existsSync(DATA_FILE)) {
+      return res.json([]);
+    }
     const data = fs.readFileSync(DATA_FILE, 'utf8');
+    // Handle empty file
+    if (!data || data.trim() === '') {
+      return res.json([]);
+    }
     const prices = JSON.parse(data);
-    res.json(prices);
+    res.json(Array.isArray(prices) ? prices : []);
   } catch (error) {
     console.error('Error reading prices:', error);
-    res.status(500).json({ error: 'Failed to read prices' });
+    // Return empty array on error instead of error response
+    res.json([]);
   }
 });
 

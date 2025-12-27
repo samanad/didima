@@ -473,7 +473,23 @@
         async function loadPriceChart() {
             try {
                 const response = await fetch('/api/prices');
-                const prices = await response.json();
+                if (!response.ok) {
+                    console.error('Failed to fetch prices:', response.status);
+                    return;
+                }
+                
+                let prices;
+                try {
+                    const text = await response.text();
+                    prices = text ? JSON.parse(text) : [];
+                } catch (parseError) {
+                    console.error('JSON parse error:', parseError);
+                    prices = [];
+                }
+                
+                if (!Array.isArray(prices)) {
+                    prices = [];
+                }
 
                 const ctx = document.getElementById('priceChart');
                 if (!ctx) return;
@@ -481,7 +497,9 @@
                 const chartCtx = ctx.getContext('2d');
                 
                 // Sort prices by timestamp
-                prices.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                if (prices.length > 0) {
+                    prices.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                }
 
                 const labels = prices.map(p => {
                     const date = new Date(p.timestamp);
