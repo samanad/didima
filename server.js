@@ -1,9 +1,41 @@
 const express = require('express');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const compression = require('compression');
-const rateLimit = require('express-rate-limit');
-const session = require('express-session');
+
+// Make core middleware optional to prevent startup crashes
+let helmet, morgan, compression, rateLimit, session;
+try {
+  helmet = require('helmet');
+} catch (e) {
+  console.warn('helmet not available:', e.message);
+  helmet = null;
+}
+
+try {
+  morgan = require('morgan');
+} catch (e) {
+  console.warn('morgan not available:', e.message);
+  morgan = null;
+}
+
+try {
+  compression = require('compression');
+} catch (e) {
+  console.warn('compression not available:', e.message);
+  compression = null;
+}
+
+try {
+  rateLimit = require('express-rate-limit');
+} catch (e) {
+  console.warn('express-rate-limit not available:', e.message);
+  rateLimit = null;
+}
+
+try {
+  session = require('express-session');
+} catch (e) {
+  console.warn('express-session not available:', e.message);
+  session = null;
+}
 let RedisStore, createClient;
 try {
   RedisStore = require('connect-redis').default;
@@ -168,26 +200,62 @@ try {
   }
 })();
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+// Rate limiting (optional)
+let limiter = null;
+if (rateLimit) {
+  try {
+    limiter = rateLimit({
+      windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
+      max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
+      message: 'Too many requests from this IP, please try again later.',
+      standardHeaders: true,
+      legacyHeaders: false,
+    });
+  } catch (e) {
+    console.warn('Could not create rate limiter:', e.message);
+  }
+}
 
-// Middleware
-app.use(helmet());
+// Middleware (make all optional)
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+if (helmet) {
+  try {
+    app.use(helmet());
+  } catch (e) {
+    console.warn('Could not use helmet:', e.message);
+  }
+}
+
 app.use(cors({
   origin: process.env.FRONTEND_URL || "http://localhost:3000",
   credentials: true
 }));
-app.use(compression());
-app.use(morgan('combined'));
-app.use(limiter);
+
+if (compression) {
+  try {
+    app.use(compression());
+  } catch (e) {
+    console.warn('Could not use compression:', e.message);
+  }
+}
+
+if (morgan) {
+  try {
+    app.use(morgan('combined'));
+  } catch (e) {
+    console.warn('Could not use morgan:', e.message);
+  }
+}
+
+if (limiter) {
+  try {
+    app.use(limiter);
+  } catch (e) {
+    console.warn('Could not use rate limiter:', e.message);
+  }
+}
 
 // Session configuration (with optional Redis)
 let sessionConfig = {
