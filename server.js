@@ -186,15 +186,19 @@ let sessionConfig = {
 };
 
 // Try to use Redis store if available
-try {
-  const redisClient = createClient({
-    url: process.env.REDIS_URL || 'redis://localhost:6379'
-  });
-  sessionConfig.store = new RedisStore({ client: redisClient });
-  console.log('Using Redis session store');
-} catch (error) {
-  console.warn('Redis session store not available, using memory store:', error.message);
-  // Will use default memory store
+if (RedisStore && createClient) {
+  try {
+    const redisClient = createClient({
+      url: process.env.REDIS_URL || 'redis://localhost:6379'
+    });
+    sessionConfig.store = new RedisStore({ client: redisClient });
+    console.log('Using Redis session store');
+  } catch (error) {
+    console.warn('Redis session store not available, using memory store:', error.message);
+    // Will use default memory store
+  }
+} else {
+  console.log('Redis modules not loaded, using memory session store');
 }
 
 app.use(session(sessionConfig));
