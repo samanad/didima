@@ -258,34 +258,42 @@ if (limiter) {
 }
 
 // Session configuration (with optional Redis)
-let sessionConfig = {
-  secret: process.env.JWT_SECRET || 'fallback-secret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
-};
+if (session) {
+  let sessionConfig = {
+    secret: process.env.JWT_SECRET || 'fallback-secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+  };
 
-// Try to use Redis store if available
-if (RedisStore && createClient) {
+  // Try to use Redis store if available
+  if (RedisStore && createClient) {
+    try {
+      const redisClient = createClient({
+        url: process.env.REDIS_URL || 'redis://localhost:6379'
+      });
+      sessionConfig.store = new RedisStore({ client: redisClient });
+      console.log('Using Redis session store');
+    } catch (error) {
+      console.warn('Redis session store not available, using memory store:', error.message);
+      // Will use default memory store
+    }
+  } else {
+    console.log('Redis modules not loaded, using memory session store');
+  }
+
   try {
-    const redisClient = createClient({
-      url: process.env.REDIS_URL || 'redis://localhost:6379'
-    });
-    sessionConfig.store = new RedisStore({ client: redisClient });
-    console.log('Using Redis session store');
-  } catch (error) {
-    console.warn('Redis session store not available, using memory store:', error.message);
-    // Will use default memory store
+    app.use(session(sessionConfig));
+  } catch (e) {
+    console.warn('Could not configure session:', e.message);
   }
 } else {
-  console.log('Redis modules not loaded, using memory session store');
+  console.warn('express-session not available, sessions disabled');
 }
-
-app.use(session(sessionConfig));
 
 // Serve static files from public folder (for Plesk Document Root: /httpdocs/public)
 app.use(express.static(path.join(__dirname, 'public'), {
