@@ -4,21 +4,20 @@
 
 Connect to your ISPmanager server via SSH:
 ```bash
-ssh your-username@your-server-ip
+ssh www-root@your-server-ip
 ```
 
 ## Step 2: Navigate to Your Domain Directory
 
-In ISPmanager, your domain files are typically located at:
+In ISPmanager, with username `www-root`, your domain files are typically located at:
 ```bash
-cd /var/www/your-username/data/www/kloji.com
-```
-or
-```bash
-cd /home/your-username/kloji.com
+cd /var/www/www-root/data/www/kloji.com
 ```
 
-Check your ISPmanager panel for the exact path.
+If the path is different, check your ISPmanager panel:
+- Go to **WWW** → **WWW domains**
+- Select `kloji.com`
+- Check the **Document root** path
 
 ## Step 3: Initialize Git (if not already done)
 
@@ -90,7 +89,7 @@ Edit the `.env` file with your configuration:
 3. Click **Create**
 4. Configure:
    - **Domain**: kloji.com
-   - **Application root**: `/var/www/your-username/data/www/kloji.com` (or your path)
+   - **Application root**: `/var/www/www-root/data/www/kloji.com` (or your Document root path)
    - **Application startup file**: `server.js`
    - **Node.js version**: 18.x or higher
    - **Application mode**: production
