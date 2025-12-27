@@ -12,24 +12,98 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
-// Import routes
-const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/users');
-const tradingRoutes = require('./routes/trading');
-const portfolioRoutes = require('./routes/portfolio');
-const liquidityRoutes = require('./routes/liquidity');
-const blockchainRoutes = require('./routes/blockchain');
+// Import routes (with error handling - make them optional)
+let authRoutes, userRoutes, tradingRoutes, portfolioRoutes, liquidityRoutes, blockchainRoutes;
+let errorHandler, authMiddleware;
+let connectDB, connectRedis, initializeBlockchain;
 
-// Import middleware
-const { errorHandler } = require('./middleware/errorHandler');
-const { authMiddleware } = require('./middleware/auth');
+try {
+  authRoutes = require('./routes/auth');
+} catch (e) {
+  console.warn('Could not load auth routes:', e.message);
+  authRoutes = null;
+}
 
-// Import database connection
-const { connectDB } = require('./config/database');
-const { connectRedis } = require('./config/redis');
+try {
+  userRoutes = require('./routes/users');
+} catch (e) {
+  console.warn('Could not load user routes:', e.message);
+  userRoutes = null;
+}
 
-// Import blockchain service
-const { initializeBlockchain } = require('./services/blockchain');
+try {
+  tradingRoutes = require('./routes/trading');
+} catch (e) {
+  console.warn('Could not load trading routes:', e.message);
+  tradingRoutes = null;
+}
+
+try {
+  portfolioRoutes = require('./routes/portfolio');
+} catch (e) {
+  console.warn('Could not load portfolio routes:', e.message);
+  portfolioRoutes = null;
+}
+
+try {
+  liquidityRoutes = require('./routes/liquidity');
+} catch (e) {
+  console.warn('Could not load liquidity routes:', e.message);
+  liquidityRoutes = null;
+}
+
+try {
+  blockchainRoutes = require('./routes/blockchain');
+} catch (e) {
+  console.warn('Could not load blockchain routes:', e.message);
+  blockchainRoutes = null;
+}
+
+// Import middleware (with error handling)
+try {
+  const errorHandlerModule = require('./middleware/errorHandler');
+  errorHandler = errorHandlerModule.errorHandler;
+} catch (e) {
+  console.warn('Could not load error handler:', e.message);
+  errorHandler = (err, req, res, next) => {
+    console.error('Error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  };
+}
+
+try {
+  const authModule = require('./middleware/auth');
+  authMiddleware = authModule.authMiddleware;
+} catch (e) {
+  console.warn('Could not load auth middleware:', e.message);
+  authMiddleware = (req, res, next) => next(); // Pass through if not available
+}
+
+// Import database connection (optional)
+try {
+  const dbModule = require('./config/database');
+  connectDB = dbModule.connectDB;
+} catch (e) {
+  console.warn('Could not load database config:', e.message);
+  connectDB = () => console.log('Database connection skipped');
+}
+
+try {
+  const redisModule = require('./config/redis');
+  connectRedis = redisModule.connectRedis;
+} catch (e) {
+  console.warn('Could not load redis config:', e.message);
+  connectRedis = () => console.log('Redis connection skipped');
+}
+
+// Import blockchain service (optional)
+try {
+  const blockchainModule = require('./services/blockchain');
+  initializeBlockchain = blockchainModule.initializeBlockchain;
+} catch (e) {
+  console.warn('Could not load blockchain service:', e.message);
+  initializeBlockchain = () => console.log('Blockchain initialization skipped');
+}
 
 // Price tracker configuration
 const ADMIN_IP = '165.22.58.120';
@@ -338,8 +412,15 @@ app.get('/api/ws', (req, res) => {
   res.json({ message: 'WebSocket endpoint' });
 });
 
-// Error handling middleware
-app.use(errorHandler);
+// Error handling middleware (only if available)
+if (errorHandler) {
+  app.use(errorHandler);
+} else {
+  app.use((err, req, res, next) => {
+    console.error('Unhandled error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  });
+}
 
 // 404 handler
 app.use('*', (req, res) => {
