@@ -310,6 +310,108 @@ app.get('/health', (req, res) => {
   });
 });
 
+// SMTP Connection Test endpoint (admin only)
+app.get('/api/test-smtp', verifyAdminIP, async (req, res) => {
+  const testResults = {
+    configured: false,
+    connectionTest: false,
+    sendTest: false,
+    details: {},
+    error: null
+  };
+
+  try {
+    // Check if SMTP is configured
+    const smtpHost = process.env.SMTP_HOST;
+    const smtpPort = process.env.SMTP_PORT;
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPass = process.env.SMTP_PASS;
+
+    testResults.details.config = {
+      host: smtpHost || 'Not set',
+      port: smtpPort || 'Not set',
+      user: smtpUser ? (smtpUser.substring(0, 3) + '***') : 'Not set',
+      pass: smtpPass ? '***' : 'Not set'
+    };
+
+    if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
+      testResults.error = 'SMTP configuration incomplete. Please set SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS in .env';
+      return res.json(testResults);
+    }
+
+    testResults.configured = true;
+
+    // Try to load nodemailer
+    let nodemailer;
+    try {
+      nodemailer = require('nodemailer');
+    } catch (e) {
+      testResults.error = 'nodemailer package not installed. Run: npm install nodemailer';
+      return res.json(testResults);
+    }
+
+    // Create transporter
+    const transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: parseInt(smtpPort),
+      secure: smtpPort === '465', // true for 465, false for other ports
+      auth: {
+        user: smtpUser,
+        pass: smtpPass
+      },
+      // Add timeout
+      connectionTimeout: 10000, // 10 seconds
+      greetingTimeout: 10000,
+      socketTimeout: 10000
+    });
+
+    // Test connection
+    try {
+      await transporter.verify();
+      testResults.connectionTest = true;
+      testResults.details.connection = 'Successfully connected to SMTP server';
+    } catch (verifyError) {
+      testResults.details.connection = 'Connection failed: ' + verifyError.message;
+      testResults.error = verifyError.message;
+      return res.json(testResults);
+    }
+
+    // Optional: Send test email (if testEmail parameter is provided)
+    const testEmail = req.query.email;
+    if (testEmail) {
+      try {
+        const mailOptions = {
+          from: smtpUser,
+          to: testEmail,
+          subject: 'SMTP Test Email from Kloji Exchange',
+          text: 'This is a test email to verify SMTP configuration.',
+          html: '<p>This is a test email to verify SMTP configuration.</p><p>If you received this, your SMTP is working correctly!</p>'
+        };
+
+        const info = await transporter.sendMail(mailOptions);
+        testResults.sendTest = true;
+        testResults.details.sendTest = {
+          messageId: info.messageId,
+          response: info.response,
+          accepted: info.accepted,
+          rejected: info.rejected
+        };
+      } catch (sendError) {
+        testResults.details.sendTest = 'Failed to send test email: ' + sendError.message;
+        testResults.error = sendError.message;
+      }
+    } else {
+      testResults.details.sendTest = 'No test email sent. Add ?email=your@email.com to send a test email.';
+    }
+
+    res.json(testResults);
+  } catch (error) {
+    testResults.error = error.message;
+    testResults.details.error = error.stack;
+    res.status(500).json(testResults);
+  }
+});
+
 // Price Tracker API Routes
 // Get all prices
 app.get('/api/prices', (req, res) => {
