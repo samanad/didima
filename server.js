@@ -141,23 +141,32 @@ try {
 }
 
 // Connect to databases (with error handling for optional services)
-try {
-  connectDB();
-} catch (error) {
-  console.error('Database connection error (non-critical):', error.message);
-}
+// These are async but we don't wait for them - app can start without them
+(async () => {
+  try {
+    if (connectDB && typeof connectDB === 'function') {
+      await connectDB();
+    }
+  } catch (error) {
+    console.error('Database connection error (non-critical):', error.message);
+  }
 
-try {
-  connectRedis();
-} catch (error) {
-  console.error('Redis connection error (non-critical):', error.message);
-}
+  try {
+    if (connectRedis && typeof connectRedis === 'function') {
+      await connectRedis();
+    }
+  } catch (error) {
+    console.error('Redis connection error (non-critical):', error.message);
+  }
 
-try {
-  initializeBlockchain();
-} catch (error) {
-  console.error('Blockchain initialization error (non-critical):', error.message);
-}
+  try {
+    if (initializeBlockchain && typeof initializeBlockchain === 'function') {
+      await initializeBlockchain();
+    }
+  } catch (error) {
+    console.error('Blockchain initialization error (non-critical):', error.message);
+  }
+})();
 
 // Rate limiting
 const limiter = rateLimit({
