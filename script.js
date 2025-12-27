@@ -4,10 +4,10 @@ let userKlojiBalance = 10000000; // 10 million KLOJI
 let userUsdtBalance = 400; // 400 USDT
 let isWalletConnected = false;
 
-// Central liquidity pool (shared across network) - static, waiting for new numbers
+// Central liquidity pool (shared across network) - waiting for real data
 let centralPool = {
-    kloji: 1000000, // 1 million KLOJI - static, waiting for update
-    usdt: 850000,   // 850k USDT - static, waiting for update
+    kloji: null, // Waiting for real data
+    usdt: null,  // Waiting for real data
     networkFee: 0.5 // 0.5 USDT per transaction
 };
 
@@ -254,14 +254,22 @@ function updatePortfolio() {
     });
 }
 
-// Update liquidity pool display - static, waiting for new numbers
+// Update liquidity pool display - waiting for real data
 function updateLiquidityPool() {
-    // Pool reserves are static - waiting for new numbers from backend
+    // Pool reserves - waiting for real data from backend
     if (poolKlojiEl) {
-        poolKlojiEl.textContent = centralPool.kloji.toLocaleString();
+        if (centralPool.kloji !== null && centralPool.kloji !== undefined) {
+            poolKlojiEl.textContent = centralPool.kloji.toLocaleString();
+        } else {
+            poolKlojiEl.textContent = 'Waiting for data...';
+        }
     }
     if (poolUsdtEl) {
-        poolUsdtEl.textContent = centralPool.usdt.toLocaleString();
+        if (centralPool.usdt !== null && centralPool.usdt !== undefined) {
+            poolUsdtEl.textContent = centralPool.usdt.toLocaleString();
+        } else {
+            poolUsdtEl.textContent = 'Waiting for data...';
+        }
     }
 }
 

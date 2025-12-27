@@ -134,23 +134,52 @@ io.on('connection', (socket) => {
 // Make io available to routes
 app.set('io', io);
 
-// Trust proxy to get real IP (important for production)
+// Trust proxy to get real IP (important for production and Cloudflare)
 app.set('trust proxy', true);
 
 // IP verification middleware for price tracker
 function verifyAdminIP(req, res, next) {
-  const clientIP = req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress;
+  // Cloudflare passes the real IP in CF-Connecting-IP header
+  // Also check X-Forwarded-For and X-Real-IP as fallbacks
+  const cloudflareIP = req.headers['cf-connecting-ip'];
+  const forwardedFor = req.headers['x-forwarded-for'];
+  const realIP = req.headers['x-real-ip'];
+  const directIP = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
+  
+  // Priority: CF-Connecting-IP > X-Real-IP > X-Forwarded-For (first IP) > direct connection
+  let clientIP = cloudflareIP || realIP;
+  
+  if (!clientIP && forwardedFor) {
+    // X-Forwarded-For can contain multiple IPs, get the first one (original client)
+    clientIP = forwardedFor.split(',')[0].trim();
+  }
+  
+  if (!clientIP) {
+    clientIP = directIP;
+  }
+  
   const cleanIP = clientIP.replace('::ffff:', ''); // Remove IPv6 prefix if present
   
   // Log IP for debugging
   console.log('Price tracker request from IP:', cleanIP, 'Expected:', ADMIN_IP);
+  console.log('Headers:', {
+    'cf-connecting-ip': cloudflareIP,
+    'x-forwarded-for': forwardedFor,
+    'x-real-ip': realIP,
+    'req.ip': req.ip
+  });
   
   if (cleanIP === ADMIN_IP) {
     next();
   } else {
     res.status(403).json({ 
       error: 'Access denied. Admin IP (165.22.58.120) required.',
-      receivedIP: cleanIP
+      receivedIP: cleanIP,
+      headers: {
+        'cf-connecting-ip': cloudflareIP,
+        'x-forwarded-for': forwardedFor,
+        'x-real-ip': realIP
+      }
     });
   }
 }
