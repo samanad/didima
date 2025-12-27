@@ -1,0 +1,5 @@
+node_modules/
+prices.json
+.env
+*.log
+

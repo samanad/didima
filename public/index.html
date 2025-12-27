@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>$kloji Price Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .admin-panel {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 2px solid #e9ecef;
+        }
+
+        .admin-panel h2 {
+            color: #495057;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #495057;
+            font-weight: 600;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1.1em;
+            transition: border-color 0.3s;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .message {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-top: 30px;
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.9em;
+        }
+
+        .status.admin {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.unauthorized {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>$kloji Price Tracker</h1>
+        <p class="subtitle">Track and visualize $kloji price over time</p>
+
+        <div class="admin-panel">
+            <h2>Admin Panel</h2>
+            <div id="status" class="status"></div>
+            <form id="priceForm">
+                <div class="form-group">
+                    <label for="price">Current Price (USD)</label>
+                    <input 
+                        type="number" 
+                        id="price" 
+                        name="price" 
+                        step="0.000001" 
+                        min="0" 
+                        placeholder="Enter price in dollars"
+                        required
+                    >
+                </div>
+                <button type="submit" id="submitBtn">Add Price</button>
+            </form>
+            <div id="message" class="message"></div>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="priceChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        let priceChart = null;
+
+        // Check admin status on load
+        async function checkAdminStatus() {
+            try {
+                const response = await fetch('/api/prices');
+                const statusDiv = document.getElementById('status');
+                
+                if (response.ok) {
+                    statusDiv.textContent = '✓ Admin access verified';
+                    statusDiv.className = 'status admin';
+                } else if (response.status === 403) {
+                    statusDiv.textContent = '✗ Access denied. Admin IP required.';
+                    statusDiv.className = 'status unauthorized';
+                    document.getElementById('priceForm').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error checking admin status:', error);
+            }
+        }
+
+        // Load and display chart
+        async function loadChart() {
+            try {
+                const response = await fetch('/api/prices');
+                const prices = await response.json();
+
+                const ctx = document.getElementById('priceChart').getContext('2d');
+                
+                // Sort prices by timestamp
+                prices.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+                const labels = prices.map(p => {
+                    const date = new Date(p.timestamp);
+                    return date.toLocaleString();
+                });
+                const data = prices.map(p => p.price);
+
+                if (priceChart) {
+                    priceChart.destroy();
+                }
+
+                priceChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '$kloji Price (USD)',
+                            data: data,
+                            borderColor: 'rgb(102, 126, 234)',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            pointBackgroundColor: 'rgb(102, 126, 234)',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                title: {
+                                    display: true,
+                                    text: 'Price (USD)'
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        return '$' + value.toFixed(6);
+                                    }
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Time'
+                                },
+                                ticks: {
+                                    maxRotation: 45,
+                                    minRotation: 45
+                                }
+                            }
+                        },
+                        interaction: {
+                            mode: 'nearest',
+                            axis: 'x',
+                            intersect: false
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading chart:', error);
+            }
+        }
+
+        // Handle form submission
+        document.getElementById('priceForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const priceInput = document.getElementById('price');
+            const submitBtn = document.getElementById('submitBtn');
+            const messageDiv = document.getElementById('message');
+            const price = parseFloat(priceInput.value);
+
+            if (isNaN(price) || price <= 0) {
+                messageDiv.textContent = 'Please enter a valid price';
+                messageDiv.className = 'message error';
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Adding...';
+
+            try {
+                const response = await fetch('/api/prices', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ price })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    messageDiv.textContent = `Price $${price.toFixed(6)} added successfully!`;
+                    messageDiv.className = 'message success';
+                    priceInput.value = '';
+                    
+                    // Reload chart
+                    await loadChart();
+                } else {
+                    messageDiv.textContent = result.error || 'Failed to add price';
+                    messageDiv.className = 'message error';
+                }
+            } catch (error) {
+                messageDiv.textContent = 'Error: ' + error.message;
+                messageDiv.className = 'message error';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Add Price';
+            }
+        });
+
+        // Initialize
+        checkAdminStatus();
+        loadChart();
+
+        // Refresh chart every 30 seconds
+        setInterval(loadChart, 30000);
+    </script>
+</body>
+</html>
+
