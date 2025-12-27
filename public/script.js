@@ -42,6 +42,10 @@ function initializeApp() {
     userKlojiBalance = 10000000; // 10 million KLOJI
     userUsdtBalance = 400; // 400 USDT
     
+    // Ensure pool values are null (waiting for real data)
+    centralPool.kloji = null;
+    centralPool.usdt = null;
+    
     // Clear old localStorage data to prevent caching issues
     const savedData = localStorage.getItem('klojiExchangeData');
     if (savedData) {
@@ -49,6 +53,7 @@ function initializeApp() {
             const data = JSON.parse(savedData);
             // Only load price, not balances (balances are fixed)
             klojiPrice = data.klojiPrice || 0.85;
+            // Never load pool values from localStorage - they must be null
         } catch (e) {
             console.error('Error parsing saved data:', e);
             // Clear corrupted data
@@ -133,12 +138,23 @@ function handleBuy(e) {
         return;
     }
     
+    // Check if pool data is available
+    if (centralPool.usdt === null || centralPool.usdt === undefined) {
+        showToast('Pool data not available yet. Please wait for data.', 'error');
+        return;
+    }
+    
     if (usdtAmount > centralPool.usdt) {
         showToast('Insufficient liquidity in the pool', 'error');
         return;
     }
     
     const klojiToReceive = usdtAmount / klojiPrice;
+    if (centralPool.kloji === null || centralPool.kloji === undefined) {
+        showToast('Pool data not available yet. Please wait for data.', 'error');
+        return;
+    }
+    
     if (klojiToReceive > centralPool.kloji) {
         showToast('Insufficient KLOJI in the pool', 'error');
         return;
@@ -184,8 +200,19 @@ function handleSell(e) {
     const usdtToReceive = klojiAmount * klojiPrice;
     const totalUsdtNeeded = usdtToReceive + centralPool.networkFee;
     
+    // Check if pool data is available
+    if (centralPool.usdt === null || centralPool.usdt === undefined) {
+        showToast('Pool data not available yet. Please wait for data.', 'error');
+        return;
+    }
+    
     if (totalUsdtNeeded > centralPool.usdt) {
         showToast('Insufficient USDT liquidity in the pool', 'error');
+        return;
+    }
+    
+    if (centralPool.kloji === null || centralPool.kloji === undefined) {
+        showToast('Pool data not available yet. Please wait for data.', 'error');
         return;
     }
     
