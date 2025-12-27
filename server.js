@@ -681,13 +681,39 @@ app.use('*', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+const SOCKET_PATH = process.env.SOCKET_PATH || null;
 
-server.listen(PORT, () => {
-  console.log(`🚀 Kloji Exchange Backend running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-  console.log(`💰 Price Tracker Admin IP: ${ADMIN_IP}`);
-});
+// Support both socket file (ISPmanager) and TCP/IP port
+if (SOCKET_PATH) {
+  // Listen on Unix socket file (ISPmanager socket file method)
+  server.listen(SOCKET_PATH, () => {
+    console.log(`🚀 Kloji Exchange Backend running on socket: ${SOCKET_PATH}`);
+    console.log(`📊 Environment: ${process.env.NODE_ENV}`);
+    console.log(`🔗 Health check: http://localhost/health`);
+    console.log(`💰 Price Tracker Admin IP: ${ADMIN_IP}`);
+  });
+  
+  // Set socket permissions (make it readable/writable by web server)
+  if (typeof process.getuid === 'function' && process.getuid() === 0) {
+    // If running as root, change ownership to www-root
+    try {
+      const fs = require('fs');
+      const { execSync } = require('child_process');
+      execSync(`chown www-root:www-root ${SOCKET_PATH}`, { stdio: 'ignore' });
+      fs.chmodSync(SOCKET_PATH, 0o666);
+    } catch (e) {
+      console.warn('Could not set socket permissions:', e.message);
+    }
+  }
+} else {
+  // Listen on TCP/IP port (default)
+  server.listen(PORT, () => {
+    console.log(`🚀 Kloji Exchange Backend running on port ${PORT}`);
+    console.log(`📊 Environment: ${process.env.NODE_ENV}`);
+    console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+    console.log(`💰 Price Tracker Admin IP: ${ADMIN_IP}`);
+  });
+}
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
