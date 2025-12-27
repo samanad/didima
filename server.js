@@ -173,13 +173,8 @@ app.use(compression());
 app.use(morgan('combined'));
 app.use(limiter);
 
-// Session configuration with Redis
-const redisClient = createClient({
-  url: process.env.REDIS_URL || 'redis://localhost:6379'
-});
-
-app.use(session({
-  store: new RedisStore({ client: redisClient }),
+// Session configuration (with optional Redis)
+let sessionConfig = {
   secret: process.env.JWT_SECRET || 'fallback-secret',
   resave: false,
   saveUninitialized: false,
@@ -188,7 +183,21 @@ app.use(session({
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
-}));
+};
+
+// Try to use Redis store if available
+try {
+  const redisClient = createClient({
+    url: process.env.REDIS_URL || 'redis://localhost:6379'
+  });
+  sessionConfig.store = new RedisStore({ client: redisClient });
+  console.log('Using Redis session store');
+} catch (error) {
+  console.warn('Redis session store not available, using memory store:', error.message);
+  // Will use default memory store
+}
+
+app.use(session(sessionConfig));
 
 // Serve static files from public folder (for Plesk Document Root: /httpdocs/public)
 app.use(express.static(path.join(__dirname, 'public'), {
