@@ -326,12 +326,14 @@ app.get('/api/test-smtp', verifyAdminIP, async (req, res) => {
     const smtpPort = process.env.SMTP_PORT;
     const smtpUser = process.env.SMTP_USER;
     const smtpPass = process.env.SMTP_PASS;
+    const smtpFrom = process.env.SMTP_FROM || 'info@samaneha.com';
 
     testResults.details.config = {
       host: smtpHost || 'Not set',
       port: smtpPort || 'Not set',
       user: smtpUser ? (smtpUser.substring(0, 3) + '***') : 'Not set',
-      pass: smtpPass ? '***' : 'Not set'
+      pass: smtpPass ? '***' : 'Not set',
+      from: smtpFrom
     };
 
     if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
