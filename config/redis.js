@@ -1,8 +1,19 @@
-const { createClient } = require('redis');
+let createClient;
+try {
+  createClient = require('redis').createClient;
+} catch (e) {
+  console.warn('Redis module not available:', e.message);
+  createClient = null;
+}
 
 let redisClient = null;
 
 const connectRedis = async () => {
+  if (!createClient) {
+    console.warn('Redis client not available, skipping connection');
+    return;
+  }
+  
   try {
     redisClient = createClient({
       url: process.env.REDIS_URL || 'redis://localhost:6379',
