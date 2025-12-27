@@ -241,7 +241,40 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 if (helmet) {
   try {
-    app.use(helmet());
+    app.use(helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: [
+            "'self'",
+            "'unsafe-inline'", // Needed for inline scripts
+            "https://cdn.jsdelivr.net", // Chart.js CDN
+            "https://cdnjs.cloudflare.com", // Font Awesome and other CDNs
+            "https://ff.kis.v2.scr.kaspersky-labs.com" // Kaspersky (if needed)
+          ],
+          styleSrc: [
+            "'self'",
+            "'unsafe-inline'", // Needed for inline styles
+            "https://fonts.googleapis.com", // Google Fonts
+            "https://cdnjs.cloudflare.com" // Font Awesome
+          ],
+          fontSrc: [
+            "'self'",
+            "https://fonts.gstatic.com", // Google Fonts
+            "https://cdnjs.cloudflare.com" // Font Awesome
+          ],
+          imgSrc: [
+            "'self'",
+            "data:", // Data URIs
+            "https:" // All HTTPS images
+          ],
+          connectSrc: [
+            "'self'",
+            "wss://ff.kis.v2.scr.kaspersky-labs.com" // Kaspersky WebSocket
+          ]
+        }
+      }
+    }));
   } catch (e) {
     console.warn('Could not use helmet:', e.message);
   }
