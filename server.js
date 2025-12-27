@@ -4,8 +4,15 @@ const morgan = require('morgan');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const session = require('express-session');
-const RedisStore = require('connect-redis').default;
-const { createClient } = require('redis');
+let RedisStore, createClient;
+try {
+  RedisStore = require('connect-redis').default;
+  createClient = require('redis').createClient;
+} catch (e) {
+  console.warn('Redis modules not available:', e.message);
+  RedisStore = null;
+  createClient = null;
+}
 const http = require('http');
 const socketIo = require('socket.io');
 const fs = require('fs');
