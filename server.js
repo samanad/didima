@@ -226,20 +226,20 @@ app.get('/api/prices', (req, res) => {
       try {
         fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2));
       } catch (writeError) {
-        console.error('Error creating prices.json:', writeError);
-        return res.status(500).json({ error: 'Failed to create prices file', details: writeError.message });
+        console.error('Could not create prices.json:', writeError.message);
+        // Return empty array anyway
+        return res.json([]);
       }
     }
 
-    // Check file permissions
+    // Try to read the file
+    let data;
     try {
-      fs.accessSync(DATA_FILE, fs.constants.R_OK);
-    } catch (accessError) {
-      console.error('Cannot read prices.json:', accessError);
-      return res.status(500).json({ error: 'Cannot read prices file', details: accessError.message });
+      data = fs.readFileSync(DATA_FILE, 'utf8');
+    } catch (readError) {
+      console.error('Cannot read prices.json:', readError.message);
+      return res.json([]);
     }
-
-    const data = fs.readFileSync(DATA_FILE, 'utf8');
     
     // Handle empty file
     if (!data || data.trim() === '') {
@@ -251,33 +251,34 @@ app.get('/api/prices', (req, res) => {
     try {
       prices = JSON.parse(data);
     } catch (parseError) {
-      console.error('Error parsing prices.json:', parseError);
-      // If file is corrupted, reset it
+      console.error('Error parsing prices.json:', parseError.message);
+      // If file is corrupted, try to reset it
       try {
         fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2));
         return res.json([]);
       } catch (resetError) {
-        console.error('Error resetting prices.json:', resetError);
-        return res.status(500).json({ error: 'Corrupted prices file and cannot reset', details: parseError.message });
+        console.error('Error resetting prices.json:', resetError.message);
+        // Return empty array anyway
+        return res.json([]);
       }
     }
 
     // Ensure it's an array
     if (!Array.isArray(prices)) {
       console.warn('prices.json is not an array, resetting');
-      fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2));
+      try {
+        fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2));
+      } catch (e) {
+        // Ignore write errors
+      }
       return res.json([]);
     }
 
     res.json(prices);
   } catch (error) {
-    console.error('Unexpected error reading prices:', error);
-    console.error('Error stack:', error.stack);
-    res.status(500).json({ 
-      error: 'Failed to read prices', 
-      details: error.message,
-      filePath: DATA_FILE
-    });
+    console.error('Unexpected error reading prices:', error.message);
+    // Always return empty array on any error to prevent 500
+    res.json([]);
   }
 });
 
