@@ -38,25 +38,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Initialize the application
 function initializeApp() {
-    // Set default balances
+    // Force set balances (ignore localStorage for balances)
     userKlojiBalance = 10000000; // 10 million KLOJI
     userUsdtBalance = 400; // 400 USDT
     
-    // Load saved data from localStorage (if exists, but use defaults above)
+    // Clear old localStorage data to prevent caching issues
     const savedData = localStorage.getItem('klojiExchangeData');
     if (savedData) {
         try {
             const data = JSON.parse(savedData);
-            // Only load price, not balances (balances are set to fixed values)
+            // Only load price, not balances (balances are fixed)
             klojiPrice = data.klojiPrice || 0.85;
-            // Pool reserves stay static - waiting for new numbers
         } catch (e) {
             console.error('Error parsing saved data:', e);
+            // Clear corrupted data
+            localStorage.removeItem('klojiExchangeData');
         }
     }
     
+    // Force update portfolio immediately
     updatePortfolio();
     updateLiquidityPool();
+    
+    // Save with correct values to override any cached data
+    saveData();
 }
 
 // Setup event listeners
@@ -217,17 +222,31 @@ function updateSellReceive() {
 
 // Update portfolio display
 function updatePortfolio() {
-    klojiBalanceEl.textContent = userKlojiBalance.toLocaleString('en-US', {maximumFractionDigits: 2});
-    usdtBalanceEl.textContent = userUsdtBalance.toLocaleString('en-US', {maximumFractionDigits: 2});
+    // Force set balances to ensure they're correct
+    userKlojiBalance = 10000000; // 10 million KLOJI
+    userUsdtBalance = 400; // 400 USDT
+    
+    if (klojiBalanceEl) {
+        klojiBalanceEl.textContent = userKlojiBalance.toLocaleString('en-US', {maximumFractionDigits: 2});
+    }
+    if (usdtBalanceEl) {
+        usdtBalanceEl.textContent = userUsdtBalance.toLocaleString('en-US', {maximumFractionDigits: 2});
+    }
     
     // Total value is set to 12000000000 USD
     const totalValue = 12000000000;
-    totalValueEl.textContent = `$${totalValue.toLocaleString('en-US', {maximumFractionDigits: 2})}`;
-    totalUsdtValueEl.textContent = `${totalValue.toLocaleString('en-US', {maximumFractionDigits: 2})} USD`;
+    if (totalValueEl) {
+        totalValueEl.textContent = `$${totalValue.toLocaleString('en-US', {maximumFractionDigits: 2})}`;
+    }
+    if (totalUsdtValueEl) {
+        totalUsdtValueEl.textContent = `${totalValue.toLocaleString('en-US', {maximumFractionDigits: 2})} USD`;
+    }
     
     // Calculate KLOJI USD value based on total
     const klojiUsdtValue = totalValue - userUsdtBalance;
-    klojiUsdValueEl.textContent = `$${klojiUsdtValue.toLocaleString('en-US', {maximumFractionDigits: 2})}`;
+    if (klojiUsdValueEl) {
+        klojiUsdValueEl.textContent = `$${klojiUsdtValue.toLocaleString('en-US', {maximumFractionDigits: 2})}`;
+    }
     
     // Update price displays
     document.querySelectorAll('.current-price').forEach(el => {

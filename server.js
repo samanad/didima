@@ -94,8 +94,18 @@ app.use(session({
   }
 }));
 
-// Serve static files from root (for index.html)
-app.use(express.static(__dirname));
+// Serve static files from root (for index.html) with cache control headers
+app.use(express.static(__dirname, {
+  setHeaders: (res, path) => {
+    // Disable caching for HTML, JS, and CSS files to prevent Cloudflare caching issues
+    if (path.endsWith('.html') || path.endsWith('.js') || path.endsWith('.css')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+    }
+  }
+}));
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
