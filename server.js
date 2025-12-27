@@ -336,20 +336,24 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Socket.IO connection handling
-io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
-  
-  // Join trading room
-  socket.on('join-trading', (userId) => {
-    socket.join(`trading-${userId}`);
+// Socket.IO connection handling (only if Socket.IO is available)
+if (io) {
+  io.on('connection', (socket) => {
+    console.log('User connected:', socket.id);
+    
+    // Join trading room
+    socket.on('join-trading', (userId) => {
+      socket.join(`trading-${userId}`);
+    });
+    
+    // Handle disconnection
+    socket.on('disconnect', () => {
+      console.log('User disconnected:', socket.id);
+    });
   });
-  
-  // Handle disconnection
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-  });
-});
+} else {
+  console.warn('Socket.IO not available - real-time features disabled');
+}
 
 // Make io available to routes
 app.set('io', io);
