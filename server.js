@@ -694,16 +694,17 @@ if (SOCKET_PATH) {
   });
   
   // Set socket permissions (make it readable/writable by web server)
-  if (typeof process.getuid === 'function' && process.getuid() === 0) {
-    // If running as root, change ownership to www-root
-    try {
-      const fs = require('fs');
-      const { execSync } = require('child_process');
+  // Note: ISPmanager usually handles permissions automatically
+  try {
+    const { execSync } = require('child_process');
+    if (typeof process.getuid === 'function' && process.getuid() === 0) {
+      // If running as root, change ownership to www-root
       execSync(`chown www-root:www-root ${SOCKET_PATH}`, { stdio: 'ignore' });
-      fs.chmodSync(SOCKET_PATH, 0o666);
-    } catch (e) {
-      console.warn('Could not set socket permissions:', e.message);
     }
+    fs.chmodSync(SOCKET_PATH, 0o666);
+  } catch (e) {
+    // Permissions will be set by ISPmanager, this is just a fallback
+    console.warn('Could not set socket permissions (ISPmanager will handle this):', e.message);
   }
 } else {
   // Listen on TCP/IP port (default)
