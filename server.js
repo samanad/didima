@@ -381,7 +381,7 @@ app.get('/api/test-smtp', verifyAdminIP, async (req, res) => {
     if (testEmail) {
       try {
         const mailOptions = {
-          from: smtpUser,
+          from: smtpFrom,
           to: testEmail,
           subject: 'SMTP Test Email from Kloji Exchange',
           text: 'This is a test email to verify SMTP configuration.',
